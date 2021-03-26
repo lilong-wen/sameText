@@ -86,6 +86,8 @@ class SynthText(torch.utils.data.Dataset):
 
         coord_text_list = []
 
+        with_coord = False
+
         if len(coordinates.shape) > 2:
             for j in range(coordinates.shape[2]):
                 x1 = int(coordinates[0][0][j])
@@ -102,7 +104,11 @@ class SynthText(torch.utils.data.Dataset):
                 #                         [txt_str[j]]))
 
                 # without coordinates
-                coord_text_list.append(txt_str[j])
+                # coord_text_list.append(txt_str[j])
+
+                # only coordinates
+                coord_text_list.append([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
+
         else:
             x1 = int(coordinates[0][0])
             y1 = int(coordinates[1][0])
@@ -112,10 +118,21 @@ class SynthText(torch.utils.data.Dataset):
             y3 = int(coordinates[1][2])
             x4 = int(coordinates[0][3])
             y4 = int(coordinates[1][3])
-            coord_text_list.append(txt_str[0])
+
+            # without coordinates
+            # coord_text_list.append(txt_str[0])
+
+            # with coordinates
+            # coord_text_list.append([(x1, y1), (x2, y2), (x3, y3), (x4, y4)],txt_str[0])
+
+            # only coordiante
+            coord_text_list.append([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
 
         # return img, coord_text_list
-        sample = {'image': img, 'phrase': " ".join(txt_str)}
+        if not with_coord:
+            sample = {'image': img, 'phrase': " ".join(txt_str)}
+        else:
+            sample = {'image': img, 'phrase': " ".join(txt_str), 'coordinates': coord_text_list}
 
         if self.transform:
             sample = self.transform(sample)
