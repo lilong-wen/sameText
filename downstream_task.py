@@ -1,3 +1,4 @@
+from scipy import spatial
 import os
 import yaml
 from dataloader.dataset_wrapper import DataSetWrapper
@@ -9,10 +10,57 @@ import cv2
 import numpy as np
 from apex import amp
 import torchvision.transforms as transforms
+import h5py
 
-checkpoints_folder = "./runs/Mar18_10-57-42_ubuntu/checkpoints/"
+checkpoints_folder = "./runs/Mar29_10-40-19_ubuntu/checkpoints/"
 
 # xls = tokenizer(list(xls), return_tensors="pt", padding=True, truncation=truncation)
+
+def get_img():
+
+    img_db_1 = h5py.File('./task1/synthText_1.h5')
+    img_db_2 = h5py.File('./task1/synthText_2.h5')
+
+    dsets_1 = sorted(img_db_1['data'].keys())
+    dsets_2 = sorted(img_db_2['data'].keys())
+
+    image_data_1 = {}
+    image_data_2 = {}
+
+    for img_name_1 in dsets_1:
+        img = img_db_1['data'][img_name_1][...]
+        image_data_1[img_name_1] = img
+
+    for img_name_2 in dsets_2:
+        img = img_db_2['data'][img_name_2][...]
+        image_data_2[img_name_2] = img
+
+    return image_data_1, image_data_2
+
+
+def similar_estimate(vec1, vec2):
+
+    result = 1 - spatial.distance.cosine(vec1, vec2)
+
+def compute_acc(fea1, fea2):
+
+    total_len = len(fea1.keys())
+    ac = 0
+    for name1, fea1 in fea1.items():
+        smallest_name = ''
+        smallest_dis = 10000
+        for name2, fea2 in fea2.items():
+            dis = similar_estimate(fea1, fea2)
+            if dis < smallest_dis:
+                smallest_name = name2
+                smallest_dis = dis
+
+        if smallest_name == name1:
+            ac += 1
+
+    print(f"total num {total_len}, ac num {ac}")
+    return ac/total_len
+
 
 def get_simclr_pipeline_transform(input_img):
     h,w = input_img.shape[0:2]
@@ -55,12 +103,6 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(config['model']['bert_base_model'])
     truncation = config['truncation']
 
-
-    img = cv2.imread('./test.jpg')
-    img = cv2.resize(img, (224,224))
-    img = get_simclr_pipeline_transform(img)
-    img = img.unsqueeze(0).to('cuda')
-
     xls = 'abc'
     xls = tokenizer(list(xls),
                     return_tensors="pt",
@@ -69,11 +111,44 @@ if __name__ == "__main__":
 
     xls.to('cuda')
 
-    img_emb, txt_emb = model(img, xls)
+    img_db_1, img_db_2 = get_img()
 
-    print(img_emb.shape)
-    print(txt_emb.shape)
+    feature_db_1 = {}
+    feature_db_2 = {}
 
-    print(img_emb)
-    print(8*"*")
-    print(txt_emb)
+    for name, img in img_db_1.items():
+
+        img  = get_simclr_pipeline_transform(cv2.resize(img,
+                                                        (224, 224)))
+        img = img.unsqueeze(0).to('cuda')
+
+        feature, _ = model(img, xls)
+
+        feature_db_1[name] = feature
+
+    for name, img in img_db_2.items():
+
+        img  = get_simclr_pipeline_transform(cv2.resize(img,
+                                                        (224, 224)))
+        img = img.unsqueeze(0).to('cuda')
+
+        feature, _ = model(img, xls)
+
+        feature_db_2[name] = feature
+
+    value = compute_acc(feature_db_1, feature_db_2)
+    # img = cv2.imread('./test.jpg')
+    # img = cv2.resize(img, (224,224))
+    # img = get_simclr_pipeline_transform(img)
+    # img = img.unsqueeze(0).to('cuda')
+    #
+    #
+    # img_emb, txt_emb = model(img, xls)
+    #
+    # print(img_emb.shape)
+    # print(txt_emb.shape)
+    #
+    # print(img_emb)
+    # print(8*"*")
+    # print(txt_emb)
+    print(value)
