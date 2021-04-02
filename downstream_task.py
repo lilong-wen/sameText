@@ -40,23 +40,27 @@ def get_img():
 
 def similar_estimate(vec1, vec2):
 
-    result = 1 - spatial.distance.cosine(vec1, vec2)
+    result = spatial.distance.cosine(vec1.cpu().numpy(), vec2.cpu().numpy())
+    return result
 
-def compute_acc(fea1, fea2):
+def compute_acc(fea_1, fea_2):
 
-    total_len = len(fea1.keys())
+    total_len = len(fea_1.keys())
     ac = 0
-    for name1, fea1 in fea1.items():
+    for name1, fea1 in fea_1.items():
         smallest_name = ''
         smallest_dis = 10000
-        for name2, fea2 in fea2.items():
+        for name2, fea2 in fea_2.items():
             dis = similar_estimate(fea1, fea2)
             if dis < smallest_dis:
                 smallest_name = name2
                 smallest_dis = dis
 
-        if smallest_name == name1:
+        if smallest_name.split("_")[0] == name1.split("_")[0]:
             ac += 1
+        else:
+            print(f"{name1} mismatched with {smallest_name}")
+            print(smallest_dis)
 
     print(f"total num {total_len}, ac num {ac}")
     return ac/total_len
@@ -122,7 +126,11 @@ if __name__ == "__main__":
                                                         (224, 224)))
         img = img.unsqueeze(0).to('cuda')
 
-        feature, _ = model(img, xls)
+        with torch.no_grad():
+
+            feature, _ = model(img, xls)
+
+        # torch.cuda.empty_cache()
 
         feature_db_1[name] = feature
 
@@ -132,7 +140,11 @@ if __name__ == "__main__":
                                                         (224, 224)))
         img = img.unsqueeze(0).to('cuda')
 
-        feature, _ = model(img, xls)
+        with torch.no_grad():
+
+            feature, _ = model(img, xls)
+
+        # torch.cuda.empty_cache()
 
         feature_db_2[name] = feature
 
