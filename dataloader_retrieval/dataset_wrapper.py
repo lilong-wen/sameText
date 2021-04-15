@@ -85,13 +85,31 @@ class SimCLRDataTransform(object):
     def __init__(self, transform_image):
         self.transform_image = transform_image
 
+    def append_empty(self,length, list_):
+
+        diff_len = length - len(list_)
+        if diff_len < 0:
+            raise AttributeError('Length error list is too long.')
+        return list_ + [''] * diff_len
+
     def __call__(self, sample):
+
         xi_anchor = self.transform_image(sample['anchor'][0])
         xi_positive = self.transform_image(sample['positive'][0])
         xi_negtive = self.transform_image(sample['negtive'][0])
-        xl_anchor = list(sample['anchor'][1])
-        xl_positive = list(sample['positive'][1])
-        xl_negtive = list(sample['negtive'][1])
+        # xl_anchor = [item.decode('utf-8') for item in sample['anchor'][1]]
+        # xl_positive = [item.decode('utf-8') for item in sample['positive'][1]]
+        # xl_negtive = [item.decode('utf-8') for item in sample['negtive'][1]]
+        # xl_anchor = self.append_empty(50, list(sample['anchor'][1]))
+        # xl_positive = self.append_empty(50, list(sample['positive'][1]))
+        # xl_negtive = self.append_empty(50, list(sample['negtive'][1]))
 
-        return [xi_anchor, xi_positive, xi_negtive],\
-            [xl_anchor, xl_positive, xl_negtive]
+        xl_anchor = ' '.join([item.decode('utf-8') for item in sample['anchor'][1]])
+        xl_positive = ' '.join([item.decode('utf-8') for item in sample['positive'][1]])
+        xl_negtive = ' '.join([item.decode('utf-8') for item in sample['negtive'][1]])
+
+
+        # return [[xi_anchor, xi_positive, xi_negtive],\
+        #        [xl_anchor, xl_positive, xl_negtive]]
+        return xi_anchor, xi_positive, xi_negtive, \
+            xl_anchor, xl_positive, xl_negtive

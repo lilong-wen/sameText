@@ -1,0 +1,44 @@
+batch_size: 5
+epochs: 1
+eval_every_n_epochs: 2
+fine_tune_from: Mar19_15-32-02_ubuntu
+log_every_n_steps: 2
+learning_rate: 1e-4
+weight_decay: 1e-6
+fp16_precision: True
+truncation: True
+
+model:
+  out_dim: 512
+  res_base_model: "resnet50"
+  bert_base_model: 'emilyalsentzer/Bio_ClinicalBERT'
+  freeze_layers: [0,1,2,3,4,5]
+  do_lower_case: False
+
+dataset:
+  s: 1
+  input_shape: (224,224,3)
+  num_workers: 1
+  valid_size: 0.1
+  #root_dir: "/home/zju/w4/datasets/SynthText"
+  root_dir_1: './retrieval_dataset/synthText_1.h5'
+  root_dir_2: './retrieval_dataset/synthText_2.h5'
+
+
+
+loss:
+  temperature: 0.1
+  use_cosine_similarity: True
+  alpha_weight: 0.75
+
+### BERT Models
+# emilyalsentzer/Bio_ClinicalBERT
+# bert-base-uncased
+# distilbert-base-nli-mean-tokens
+# distilbert-base-multilingual-cased
+# distiluse-base-multilingual-cased-v2
+# sentence-transformers/distilbert-base-nli-stsb-mean-tokens
+# sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens #good
+# cross-encoder/stsb-roberta-base
+# sentence-transformers/paraphrase-xlm-r-multilingual-v1 #good
+# Portuguese: neuralmind/bert-base-portuguese-cased
